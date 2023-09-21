@@ -7,6 +7,24 @@ Command::Command(int8_t byte1, int8_t byte2, int8_t byte3)
     this->byte3 = byte3;
 }
 
+Command *Command::getCommand(int8_t opcode, int8_t byte2, int8_t byte3)
+{
+    switch(opcode) {
+    case Commands::IN:
+        return new In(opcode, byte2, byte3);
+    case Commands::OUT:
+        return new Out(opcode, byte2, byte3);
+    case Commands::ADD:
+        return new Add(opcode, byte2, byte3);
+    case Commands::MOVRM:
+        return new MovRM(opcode, byte2, byte3);
+    case Commands::LEA:
+        return new Lea(opcode, byte2, byte3);
+    default:
+        throw "Unknown command";
+    }
+}
+
 void In::operator()(VirtualMachine *vm)
 {
     int32_t value;
