@@ -3,77 +3,56 @@
 #include <fstream>
 #include <bitset>
 #include <vector>
+#include <command.h>
 
 using namespace std;
 
 enum Commands {
-    MOVRR = 0x01,
-    MOVMR = 0x02,
-    MOVRM = 0x03,
-    ADD = 0x04,
-    SUB = 0x05,
-    MUL = 0x06,
-    DIV = 0x07,
-    FADD = 0x08,
-    FSUB = 0x09,
-    FMUL = 0x0a,
-    FDIV = 0x0b,
-    JMP = 0x0c,
-    RELJMP = 0x0d,
-    INDJMP = 0x0e,
-    JE = 0x0f,
-    JNE = 0x10,
-    JG = 0x11,
-    JGE = 0x12,
-    JL = 0x13,
-    JLE = 0x14,
-    CALL = 0x15,
-    RET = 0x16,
-    IN = 0x17,
-    OUT = 0x18,
-    HALT = 0x19
+    MOVRR = 0x01, // 00000001
+    MOVMR = 0x02, // 00000010
+    MOVRM = 0x03, // 00000011
+
+    ADD = 0x10, // 00010000
+    SUB = 0x11, // 00010001
+    MUL = 0x12, // 00010010
+    DIV = 0x13, // 00010011
+
+    FADD = 0x20, // 00100000
+    FSUB = 0x21, // 00100001
+    FMUL = 0x22, // 00100010
+    FDIV = 0x23, // 00100011
+
+    JMP = 0x30, // 00110000
+    RELJMP = 0x31, // 00110001
+    INDJMP = 0x32, // 00110010
+    JE = 0x33, // 00110011
+    JNE = 0x34, // 00110100
+    JG = 0x35, // 00110101
+    JGE = 0x36, // 00110110
+    JL = 0x37, // 00110111
+    JLE = 0x38, // 00111000
+
+    LEA = 0x40, // 01000000 загружает адрес ячейки памяти в r16
+
+    CALL = 0x50, // 01010000
+    RET = 051, // 01010001
+    IN = 0x52, // 01010010
+    OUT = 0x53, // 01010011
+    HALT = 0x54 // 01010100
 };
 
 uint32_t PSW;
 int8_t memory[65536];
 // 0-16383 reserved for code. 16384 - first available address (0x4000)
 int32_t registers[16];
-int count = 0;
-
-/*
-1 - movrr 0000001 0x01
-2 - movmr 0000010 0x02
-3 - movrm 0000011 0x03
-4 - add 0000100 0x04
-5 - sub 0000101 0x05
-6 - mul 0000110 0x06
-7 - div 0000111 0x07
-8 - fadd 0001000 0x08
-9 - fsub 0001001 0x09
-10 - fmul 0001010 0x0a
-11 - fdiv 0001011 0x0b
-12 - jmp 0001100 0x0c
-13 - reljmp 0001101 0x0d
-14 - indjmp 0001110 0x0e
-15 - je - jump if equal 0001111 0x0f
-16 - jne - jump if not equal 0010000 0x10
-17 - jg - jump if greater 0010001 0x11
-18 - jge - jump if greater or equal 0010010 0x12
-19 - jl - jump if less 0010011 0x13
-20 - jle - jump if less or equal 0010100 0x14
-21 - call 0010101 0x15
-22 - ret 0010110 0x16
-23 - in 0010111 0x17
-24 - out 0011000 0x18
-25 - halt 0011001 0x19
-*/
 
 void load(string filename) {
+    int count = 0;
     fstream file;
     file.open(filename);
     string str;
     while (file >> str) {
-        memory[count] = stoi(str, nullptr,16);
+        memory[count] = stoi(str, nullptr,16); // перевод из строки в шестнадцатеричное число
         count++;
     }
     memory[count] = Commands::HALT;
@@ -82,7 +61,6 @@ void load(string filename) {
     count++;
     memory[count] = 0;
     file.close();
-
 }
 
 uint16_t getIP() {
@@ -96,60 +74,67 @@ void setIP(uint16_t address) {
 }
 
 int32_t getRegister(int number) {
-    return registers[number - 1];
+    return registers[number];
 }
 
 void setRegister(int number, int32_t value) {
-    registers[number - 1] = value;
+    registers[number] = value;
 }
 
-void doIn(int8_t arg1, int8_t arg2) {
+void doIn(int8_t byte2) {
     int32_t value;
-    auto registerNumber = arg1 & 0x0f;
+    auto registerNumber = byte2 & 0x0f;
     cout << "Program is asking for input: " << endl;
     cin >> value;
     //cout << "arg1 " << static_cast<int>(arg1) << endl;
     setRegister(registerNumber, value);
 }
 
-void doOut(int8_t arg1, int8_t arg2) {
-    auto registerNumber = arg1 & 0x0f;
-    cout << "Program output:\n" << getRegister(registerNumber) << endl;
+void doOut(int8_t byte2) {
+    auto regNum = byte2 & 0x0f;
+    cout << "Program output:\n" << getRegister(regNum) << endl;
 }
 
-void add(int8_t arg1, int8_t arg2) {
-    auto value1 = getRegister(arg1 & 0x0f);
-    auto value2 = getRegister(arg1 >> 4);
+void add(int8_t byte2) {
+    auto value1 = getRegister(byte2 & 0x0f); // обнуление старшей половины байта для получения номера первого регистра
+    auto value2 = memory[getRegister(byte2 >> 4)]; // сдвиг вправо на 4 бита для получения номера второго регистра
     setRegister(1, value1 + value2);
 }
 
+void lea(int8_t byte2, int8_t byte3) {
+    auto address = ((byte2 << 2) & 0xf0) + byte3;
+    setRegister(15, address);
+}
+
+void movrm(int8_t regnum) {
+    memory[getRegister((regnum >> 4) & 0x0f)] = getRegister(regnum & 0x0f);
+}
+
 void run() {
-    int8_t opcode = 0, arg1, arg2;
+    int8_t opcode = 0, byte2, byte3;
     int ip = getIP();
     while (opcode != Commands::HALT) {
         opcode = memory[ip++];
-        arg1 = memory[ip++];
-        arg2 = memory[ip++];
+        byte2 = memory[ip++];
+        byte3 = memory[ip++];
         //cout << "opcode " << static_cast<int>(opcode) << endl;
         switch(opcode) {
         case Commands::IN:
-            doIn(arg1, arg2);
+            doIn(byte2);
             break;
         case Commands::OUT:
-            doOut(arg1, arg2);
+            doOut(byte2);
             break;
         case Commands::ADD:
-            add(arg1, arg2);
+            add(byte2);
+            break;
+        case Commands::MOVRM:
+            movrm(byte2);
+            break;
+        case Commands::LEA:
+            lea(byte2, byte3);
         }
     }
-
-
-//    while(file >> hex >> first >> second >> third) {
-//        cout << hex << first << " " << second << " " << third << endl;
-//        int8_t d = first & 0x80;
-//        int8_t opcode = first & 0x7f;
-//        cout << hex << "d: " << static_cast<int>(d) << endl << "opcode: " << static_cast<int>(opcode) << endl;
-//    }
 }
 
 int main()
@@ -158,6 +143,7 @@ int main()
     setIP(0);
     run();
 
+    Command command;
 
     return 0;
 }
