@@ -43,19 +43,20 @@ void Out::operator()(VirtualMachine *vm)
 void Add::operator()(VirtualMachine *vm)
 {
     auto value1 = vm->getProcessor()->getRegister(byte2 & 0x0f); // обнуление старшей половины байта для получения номера первого регистра
-    auto value2 = vm->getMemory()->get(vm->getProcessor()->getRegister(byte2 >> 4)); // сдвиг вправо на 4 бита для получения номера второго регистра
+    auto address = vm->getProcessor()->getRegister((uint8_t)byte2 >> 4);
+    auto value2 = vm->getMemory()->get(address); // сдвиг вправо на 4 бита для получения номера второго регистра
     vm->getProcessor()->setRegister(1, value1 + value2);
 }
 
 void MovRM::operator()(VirtualMachine *vm)
 {
-    int16_t address = vm->getProcessor()->getRegister((byte2 >> 4) & 0x0f);
-    int8_t val = vm->getProcessor()->getRegister(byte2 & 0x0f);
+    auto address = vm->getProcessor()->getRegister((byte2 >> 4) & 0x0f);
+    auto val = vm->getProcessor()->getRegister(byte2 & 0x0f);
     vm->getMemory()->set(address, val);
 }
 
 void Lea::operator()(VirtualMachine *vm)
 {
-    auto address = ((byte2 << 2) & 0xf0) + byte3;
+    auto address = (static_cast<int16_t>(byte2 << 2)) + byte3;
     vm->getProcessor()->setRegister(15, address);
 }

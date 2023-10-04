@@ -7,7 +7,6 @@
 
 class Command
 {    
-    friend class VirtualMachine;
 public:
 
     Command(int8_t byte1, int8_t byte2, int8_t byte3);
@@ -18,7 +17,6 @@ protected:
     int8_t byte1;
     int8_t byte2;
     int8_t byte3;
-
 };
 
 class In : public Command {

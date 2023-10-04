@@ -1,10 +1,10 @@
 #include "virtualmachine.h"
+#include "command.h"
 
 VirtualMachine::VirtualMachine()
 {
     memory = new Memory;
     processor = new Processor;
-
 }
 
 Memory *VirtualMachine::getMemory()
@@ -33,6 +33,10 @@ void VirtualMachine::load(std::string filename) {
     count++;
 
     memory->set(count, 0);
+
+    for (int i = 0; i < 20; i++) {
+        std::cout << static_cast<uint16_t>(memory->get(i)) << " ";
+    }
     file.close();
 
     processor->setIP(0);
@@ -41,13 +45,14 @@ void VirtualMachine::load(std::string filename) {
 void VirtualMachine::run() {
     int8_t opcode = 0, byte2, byte3;
     int ip = processor->getIP();
-    while (opcode != 0x54) {
-        opcode = memory->get(ip++);
+    while ((opcode = memory->get(ip++)) != 0x54) {
         byte2 = memory->get(ip++);
         byte3 = memory->get(ip++);
         Command* command = Command::getCommand(opcode, byte2, byte3);
         (*command)(this);
     }
 }
+
+// циклические зависимости
 
 
