@@ -11,17 +11,16 @@ class Command;
 class VirtualMachine
 {
 public:
-
     VirtualMachine();
     Memory* getMemory();
     Processor* getProcessor();
+
     void load(std::string filename);
     void run();
 
 private:
     Memory* memory;
     Processor* processor;
-
 };
 
 #endif // VIRTUALMACHINE_H

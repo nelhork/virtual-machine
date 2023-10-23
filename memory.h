@@ -8,11 +8,13 @@ class Memory
 {
 public:
     Memory();
-    int8_t get(int16_t address);
-    void set(int16_t address, int8_t value);
+    uint8_t get(uint16_t address);
+    uint32_t get32(uint16_t address);
+    void set(uint16_t address, uint8_t value);
+    void set(uint16_t address, uint32_t value);
 
 private:
-    int8_t* mem;
+    uint8_t* mem;
 };
 
 #endif // MEMORY_H

@@ -23,36 +23,42 @@ void VirtualMachine::load(std::string filename) {
     file.open(filename);
     std::string str;
     while (file >> str) {
-        memory->set(count, stoi(str, nullptr,16)); // перевод из строки в шестнадцатеричное число
+        memory->set(count, static_cast<uint8_t>(stoi(str, nullptr, 16))); // перевод из строки в шестнадцатеричное число
         count++;
     }
-    memory->set(count, 0x54);
-    count++;
+//    memory->set(count, static_cast<uint8_t>(0x54));
+//    count++;
 
-    memory->set(count, 0);
-    count++;
+//    memory->set(count, static_cast<uint8_t>(0));
+//    count++;
 
-    memory->set(count, 0);
+//    memory->set(count, static_cast<uint8_t>(0));
 
-    for (int i = 0; i < 20; i++) {
-        std::cout << static_cast<uint16_t>(memory->get(i)) << " ";
-    }
+//    for (int i = 0; i < 20; i++) {
+//        std::cout << static_cast<uint16_t>(memory->get(i)) << " ";
+//    }
     file.close();
 
     processor->setIP(0);
 }
 
 void VirtualMachine::run() {
-    int8_t opcode = 0, byte2, byte3;
+    uint8_t opcode = 0, byte2, byte3;
     int ip = processor->getIP();
     while ((opcode = memory->get(ip++)) != 0x54) {
         byte2 = memory->get(ip++);
         byte3 = memory->get(ip++);
-        Command* command = Command::getCommand(opcode, byte2, byte3);
-        (*command)(this);
+        processor->setIP(ip);
+        try {
+            Command* command = Command::getCommand(opcode, byte2, byte3);
+            (*command)(this);
+            ip = processor->getIP();
+        } catch (const char* error) {
+            std::cout << "exception: " << error << std::endl;
+            break;
+        }
+
     }
 }
 
 // циклические зависимости
-
-
