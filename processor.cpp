@@ -1,9 +1,11 @@
-#include "processor.h"
 #include <iostream>
 #include <bitset>
+#include "processor.h"
+#include "command.h"
 
 Processor::Processor()
 {
+    PSW = 0;
 }
 
 uint16_t Processor::getIP() {
@@ -16,22 +18,11 @@ void Processor::setIP(uint16_t address) {
     PSW += newaddr;
 }
 
-int32_t Processor::getRegisterVal(uint8_t number) {
-    //std::cout << "register read: " << registers[number] << " at " << number << std::endl;
-    return registers[number];
-}
-
-void Processor::setRegisterVal(uint8_t number, int32_t value) {
-    //std::cout << "register write: " << static_cast<int>(value) << " at " << number << std::endl;
-    registers[number] = value;
-}
-
 void Processor::setCF(uint8_t value)
 {
     std::bitset<32> bitsetPSW(PSW);
     bitsetPSW[1] = value;
     PSW = bitsetPSW.to_ulong();
-    std::cout << "setting CF to " << (int)value << "\n";
 }
 
 void Processor::setZF(uint8_t value)
@@ -39,7 +30,6 @@ void Processor::setZF(uint8_t value)
     std::bitset<32> bitsetPSW(PSW);
     bitsetPSW[0] = value;
     PSW = bitsetPSW.to_ulong();
-    std::cout << "setting ZF to " << (int)value << "\n";
 }
 
 uint8_t Processor::getZF()
@@ -52,4 +42,34 @@ uint8_t Processor::getCF()
 {
     std::bitset<32> bitsetPSW(PSW);
     return bitsetPSW[1];
+}
+
+Memory &Processor::getMemory()
+{
+    return memory;
+}
+
+void Processor::run()
+{
+    uint8_t opcode = 0, byte2, byte3; // структура команды 3 байта
+
+    int ip = getIP();
+
+    while ((opcode = memory.get(ip++)) != 0x54) {
+        byte2 = memory.get(ip++);
+        byte3 = memory.get(ip++);
+
+        setIP(ip);
+
+        try {
+            Command* command = Command::getCommand(opcode, byte2, byte3); // получение команды
+            // полиморфизм, getCommand вернет один из классов-наследников
+            (*command)(this); // вызов функтора, нужен для определения команды
+
+            ip = getIP();
+        } catch (const char* error) {
+            std::cout << "exception: " << error << std::endl;
+            break;
+        }
+    }
 }

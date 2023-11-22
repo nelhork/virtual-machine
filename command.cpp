@@ -7,7 +7,7 @@ Command::Command(uint8_t byte1, uint8_t byte2, uint8_t byte3)
     this->byte3 = byte3;
 }
 
-Command *Command::getCommand(uint8_t opcode, uint8_t byte2, uint8_t byte3)
+Command* Command::getCommand(uint8_t opcode, uint8_t byte2, uint8_t byte3)
 {
     switch(opcode) {
     case Commands::IN:
@@ -61,125 +61,124 @@ Command *Command::getCommand(uint8_t opcode, uint8_t byte2, uint8_t byte3)
     }
 }
 
-void In::operator()(VirtualMachine *vm)
+void In::operator()(Processor*vm)
 {
     int32_t value;
     auto registerNumber = byte2 & 0x0f;
-    std::cout << "Program is asking for input: " << std::endl;
     std::cin >> value;
-    vm->getProcessor()->setRegisterVal(registerNumber, value);
+    vm->registers[registerNumber] = value;
 }
 
-void Out::operator()(VirtualMachine *vm)
+void Out::operator()(Processor*vm)
 {
     auto regNum = byte2 & 0x0f;
-    std::cout << "Program output:\n" << vm->getProcessor()->getRegisterVal(regNum) << std::endl;
+    std::cout << vm->registers[regNum] << std::endl;
 }
 
-void MovRM::operator()(VirtualMachine *vm)
+void MovRM::operator()(Processor*vm)
 {
-    auto address = vm->getProcessor()->getRegisterVal((byte2 >> 4) & 0x0f);
-    uint32_t val = vm->getProcessor()->getRegisterVal(byte2 & 0x0f);
-    vm->getMemory()->set(address, val);
+    auto address = vm->registers[(byte2 >> 4) & 0x0f];
+    uint32_t val = vm->registers[byte2 & 0x0f];
+    vm->getMemory().set(address, val);
 }
 
-void MovRR::operator()(VirtualMachine *vm)
+void MovRR::operator()(Processor*vm)
 {
     uint8_t sourceRegister = byte2 & 0x0f;
-    auto sourceRegValue = vm->getProcessor()->getRegisterVal(sourceRegister);
+    auto sourceRegValue = vm->registers[sourceRegister];
     uint8_t destRegister = (byte2 >> 4) & 0x0f;
-    vm->getProcessor()->setRegisterVal(destRegister, sourceRegValue);
+    vm->registers[destRegister] = sourceRegValue;
 }
 
-void MovMR::operator()(VirtualMachine *vm)
+void MovMR::operator()(Processor* vm)
 {
-    auto address = vm->getProcessor()->getRegisterVal(byte2 & 0x0f);
-    auto value = vm->getMemory()->get(address);
-    vm->getProcessor()->setRegisterVal((byte2 >> 4) & 0x0f, value);
+    auto address = vm->registers[byte2 & 0x0f];
+    auto value = vm->getMemory().get(address);
+    vm->registers[(byte2 >> 4) & 0x0f] = value;
 }
 
-void Lea::operator()(VirtualMachine *vm)
+void Lea::operator()(Processor* vm)
 {
     auto address = (static_cast<int16_t>(byte2 << 2)) + byte3;
-    vm->getProcessor()->setRegisterVal(15, address);
+    vm->registers[15] = address;
 }
 
-void Command::GetValues(VirtualMachine* vm, int32_t &value1, int32_t &value2)
+void Command::GetValues(Processor* vm, int32_t &value1, int32_t &value2)
 {
-    value1 = vm->getProcessor()->getRegisterVal(byte2 & 0x0f); // обнуление старшей половины байта для получения номера первого регистра
-    auto address = vm->getProcessor()->getRegisterVal(byte2 >> 4);
-    value2 = vm->getMemory()->get32(address); // сдвиг вправо на 4 бита для получения номера второго регистра
+    value1 = vm->registers[byte2 & 0x0f]; // обнуление старшей половины байта для получения номера первого регистра
+    auto address = vm->registers[byte2 >> 4];
+    value2 = vm->getMemory().get32(address); // сдвиг вправо на 4 бита для получения номера второго регистра
 }
 
-void Command::GetValues(VirtualMachine *vm, float &value1, float &value2)
+void Command::GetValues(Processor*vm, float &value1, float &value2)
 {
     Command::Number num1, num2;
-    num1.iNum = vm->getProcessor()->getRegisterVal(byte2 & 0x0f); // обнуление старшей половины байта для получения номера первого регистра
-    auto address = vm->getProcessor()->getRegisterVal(byte2 >> 4);
-    num2.iNum = vm->getMemory()->get32(address); // сдвиг вправо на 4 бита для получения номера второго регистра
+    num1.iNum = vm->registers[byte2 & 0x0f]; // обнуление старшей половины байта для получения номера первого регистра
+    auto address = vm->registers[byte2 >> 4];
+    num2.iNum = vm->getMemory().get32(address); // сдвиг вправо на 4 бита для получения номера второго регистра
     value1 = num1.fNum;
     value2 = num2.fNum;
 }
 
-void Add::operator()(VirtualMachine *vm)
+void Add::operator()(Processor*vm)
 {
     int32_t value1, value2;
     GetValues(vm, value1, value2);
-    vm->getProcessor()->setRegisterVal(1, value1 + value2);
+    vm->registers[1] = value1 + value2;
 }
 
-void Sub::operator()(VirtualMachine *vm)
+void Sub::operator()(Processor*vm)
 {
     int32_t value1, value2;
     GetValues(vm, value1, value2);
-    vm->getProcessor()->setRegisterVal(1, value1 - value2);
+    vm->registers[1] = value1 - value2;
 }
 
-void Mul::operator()(VirtualMachine *vm)
+void Mul::operator()(Processor*vm)
 {
     int32_t value1, value2;
     GetValues(vm, value1, value2);
-    vm->getProcessor()->setRegisterVal(1, value1 * value2);
+    vm->registers[1] = value1 * value2;
 }
 
-void Div::operator()(VirtualMachine *vm)
+void Div::operator()(Processor*vm)
 {
     int32_t value1, value2;
     GetValues(vm, value1, value2);
     if (value2 == 0) {
         throw "Division by zero";
     }
-    vm->getProcessor()->setRegisterVal(1, value1 / value2);
+    vm->registers[1] = value1 / value2;
 }
 
-void Fadd::operator()(VirtualMachine *vm)
+void Fadd::operator()(Processor*vm)
 {
     float value1, value2;
     GetValues(vm, value1, value2);
     Command::Number result;
     result.fNum =  value1 + value2;
-    vm->getProcessor()->setRegisterVal(1, result.iNum);
+    vm->registers[1] = result.iNum;
 }
 
-void Fsub::operator()(VirtualMachine *vm)
+void Fsub::operator()(Processor*vm)
 {
     float value1, value2;
     GetValues(vm, value1, value2);
     Command::Number result;
     result.fNum =  value1 - value2;
-    vm->getProcessor()->setRegisterVal(1, result.iNum);
+    vm->registers[1] = result.iNum;
 }
 
-void Fmul::operator()(VirtualMachine *vm)
+void Fmul::operator()(Processor*vm)
 {
     float value1, value2;
     GetValues(vm, value1, value2);
     Command::Number result;
     result.fNum =  value1 * value2;
-    vm->getProcessor()->setRegisterVal(1, result.iNum);
+    vm->registers[1] = result.iNum;
 }
 
-void Fdiv::operator()(VirtualMachine *vm)
+void Fdiv::operator()(Processor*vm)
 {
     float value1, value2;
     GetValues(vm, value1, value2);
@@ -188,40 +187,38 @@ void Fdiv::operator()(VirtualMachine *vm)
     }
     Command::Number result;
     result.fNum = value1 / value2;
-    vm->getProcessor()->setRegisterVal(1, result.iNum);
+    vm->registers[1] = result.iNum;
 }
 
-void Fin::operator()(VirtualMachine *vm)
+void Fin::operator()(Processor*vm)
 {
     Command::Number value;
     auto registerNumber = byte2 & 0x0f;
-    std::cout << "\nProgram is asking for input: " << std::endl;
     std::cin >> value.fNum;
-    vm->getProcessor()->setRegisterVal(registerNumber, value.iNum);
+    vm->registers[registerNumber] = value.iNum;
 }
 
-void Fout::operator()(VirtualMachine *vm)
+void Fout::operator()(Processor*vm)
 {
     auto regNum = byte2 & 0x0f;
-    int32_t ieee = vm->getProcessor()->getRegisterVal(regNum);
+    int32_t ieee = vm->registers[regNum];
     Command::Number value;
     value.iNum = ieee;
 
-    std::cout << std::fixed << "\nProgram output:\n" << value.fNum << std::endl;
+    std::cout << std::fixed << value.fNum << std::endl;
 }
 
-void Jmp::operator()(VirtualMachine *vm)
+void Jmp::operator()(Processor*vm)
 {
     uint16_t address = (byte2 << 8) + byte3;
-    //std::cout << std::hex << address << std::endl;
-    vm->getProcessor()->setIP(address);
+    vm->setIP(address);
 }
 
-void Cmp::operator()(VirtualMachine *vm)
+void Cmp::operator()(Processor*vm)
 {
     int32_t value1, value2;
     GetValues(vm, value1, value2);
-    Processor* proc = vm->getProcessor();
+    Processor* proc = vm;
     if (value1 == value2) {
         proc->setZF(1);
     } else if (value1 > value2) {
@@ -233,45 +230,45 @@ void Cmp::operator()(VirtualMachine *vm)
     }
 }
 
-void Jg::operator()(VirtualMachine *vm)
+void Jg::operator()(Processor*vm)
 {
-    uint8_t zf = vm->getProcessor()->getZF();
-    uint8_t cf = vm->getProcessor()->getCF();
+    uint8_t zf = vm->getZF();
+    uint8_t cf = vm->getCF();
     if (cf == 1 && zf == 0) {
         uint16_t address = (byte2 << 8) + byte3;
-        vm->getProcessor()->setIP(address);
+        vm->setIP(address);
     }
 }
 
-void Jl::operator()(VirtualMachine *vm)
+void Jl::operator()(Processor*vm)
 {
-    uint8_t zf = vm->getProcessor()->getZF();
-    uint8_t cf = vm->getProcessor()->getCF();
+    uint8_t zf = vm->getZF();
+    uint8_t cf = vm->getCF();
     if (cf == 0 && zf == 0) {
         uint16_t address = (byte2 << 8) + byte3;
-        vm->getProcessor()->setIP(address);
+        vm->setIP(address);
     }
 }
 
-void Je::operator()(VirtualMachine *vm)
+void Je::operator()(Processor*vm)
 {
-    uint8_t zf = vm->getProcessor()->getZF();
+    uint8_t zf = vm->getZF();
     if (zf == 1) {
         uint16_t address = (byte2 << 8) + byte3;
-        vm->getProcessor()->setIP(address);
+        vm->setIP(address);
     }
 }
 
-void Call::operator()(VirtualMachine *vm)
+void Call::operator()(Processor*vm)
 {
-    auto currIP = vm->getProcessor()->getIP();
-    vm->getProcessor()->setRegisterVal(1, currIP);
+    auto currIP = vm->getIP();
+    vm->registers[1] = currIP;
     uint16_t address = (byte2 << 8) + byte3;
-    vm->getProcessor()->setIP(address);
+    vm->setIP(address);
 }
 
-void Ret::operator()(VirtualMachine *vm)
+void Ret::operator()(Processor*vm)
 {
-    auto address = vm->getProcessor()->getRegisterVal(1);
-    vm->getProcessor()->setIP(address);
+    auto address = vm->registers[1];
+    vm->setIP(address);
 }

@@ -17,47 +17,43 @@ Processor *VirtualMachine::getProcessor()
     return processor;
 }
 
-void VirtualMachine::load(std::string filename) {
-    int count = 0;
-    std::fstream file;
-    file.open(filename);
+void VirtualMachine::load(std::string filename) { // загрузка значений из файла в память
+    int memoryAddress = 0; // индекс массива памяти
+
+    std::fstream instructionFile;
+    instructionFile.open(filename);
+
     std::string str;
-    while (file >> str) {
-        memory->set(count, static_cast<uint8_t>(stoi(str, nullptr, 16))); // перевод из строки в шестнадцатеричное число
-        count++;
+    while (instructionFile >> str) {
+        memory->set(memoryAddress, static_cast<uint8_t>(stoi(str, nullptr, 16))); // перевод из строки в шестнадцатеричное число
+        memoryAddress++;
     }
-//    memory->set(count, static_cast<uint8_t>(0x54));
-//    count++;
-
-//    memory->set(count, static_cast<uint8_t>(0));
-//    count++;
-
-//    memory->set(count, static_cast<uint8_t>(0));
-
-//    for (int i = 0; i < 20; i++) {
-//        std::cout << static_cast<uint16_t>(memory->get(i)) << " ";
-//    }
-    file.close();
+    instructionFile.close();
 
     processor->setIP(0);
 }
 
-void VirtualMachine::run() {
-    uint8_t opcode = 0, byte2, byte3;
+void VirtualMachine::run() { // запуск программы на выполнение
+    uint8_t opcode = 0, byte2, byte3; // структура команды 3 байта
+
     int ip = processor->getIP();
+
     while ((opcode = memory->get(ip++)) != 0x54) {
         byte2 = memory->get(ip++);
         byte3 = memory->get(ip++);
+
         processor->setIP(ip);
+
         try {
-            Command* command = Command::getCommand(opcode, byte2, byte3);
-            (*command)(this);
+            Command* command = Command::getCommand(opcode, byte2, byte3); // получение команды
+            // полиморфизм, getCommand вернет один из классов-наследников
+            (*command)(this); // вызов функтора, нужен для определения команды
+
             ip = processor->getIP();
         } catch (const char* error) {
             std::cout << "exception: " << error << std::endl;
             break;
         }
-
     }
 }
 

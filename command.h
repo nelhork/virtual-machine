@@ -3,16 +3,16 @@
 
 #include <cstdint>
 #include <iostream>
-#include "virtualmachine.h"
+#include "processor.h"
 
 class Command
 {    
 public:
     Command(uint8_t byte1, uint8_t byte2, uint8_t byte3);
-    virtual void operator()(VirtualMachine* vm) = 0;
+    virtual void operator()(Processor* vm) = 0;
     static Command* getCommand(uint8_t opcode, uint8_t byte2, uint8_t byte3);
 
-protected:
+protected: // все переменные и функции нужны в классах-наследниках
     union Number {
         uint32_t iNum;
         float fNum;
@@ -22,147 +22,146 @@ protected:
     uint8_t byte2;
     uint8_t byte3;
 
-    void GetValues(VirtualMachine* vm, int32_t &value1, int32_t &value2);
-    void GetValues(VirtualMachine* vm, float &value1, float &value2);
+    void GetValues(Processor* vm, int32_t &value1, int32_t &value2); // из регистра и из памяти
+    void GetValues(Processor* vm, float &value1, float &value2);
 };
 
 class In : public Command {
 public:
     In(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Out : public Command {
 public:
     Out(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Add : public Command {
 public:
     Add(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Sub : public Command {
 public:
     Sub(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Mul : public Command {
 public:
     Mul(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Div : public Command {
 public:
     Div(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Fadd : public Command {
 public:
     Fadd(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Fsub : public Command {
 public:
     Fsub(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Fmul : public Command {
 public:
     Fmul(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Fdiv : public Command {
 public:
     Fdiv(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Fin : public Command {
 public:
     Fin(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Fout : public Command {
 public:
     Fout(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class MovRM : public Command {
 public:
     MovRM(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class MovRR : public Command {
 public:
     MovRR(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class MovMR : public Command {
 public:
     MovMR(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
-
 
 class Lea : public Command {
 public:
     Lea(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Jmp : public Command {
 public:
     Jmp(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Cmp : public Command {
 public:
     Cmp(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Jg : public Command {
 public:
     Jg(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Jl : public Command {
 public:
     Jl(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Je : public Command {
 public:
     Je(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Call : public Command {
 public:
     Call(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 class Ret : public Command {
 public:
     Ret(uint8_t byte1, uint8_t byte2, uint8_t byte3) : Command(byte1, byte2, byte3) {}
-    void operator()(VirtualMachine* vm) override;
+    virtual void operator()(Processor* vm) override;
 };
 
 enum Commands {
@@ -183,14 +182,9 @@ enum Commands {
     FOUT = 0x25, // 00100101 +
 
     JMP = 0x30, // 00110000 +
-    //RELJMP = 0x31, // 00110001
-    //INDJMP = 0x32, // 00110010
     JE = 0x33, // 00110011 +
-    //JNE = 0x34, // 00110100
     JG = 0x35, // 00110101 +
-    //JGE = 0x36, // 00110110
     JL = 0x37, // 00110111 +
-    //JLE = 0x38, // 00111000
 
     LEA = 0x40, // 01000000 + загружает адрес ячейки памяти в r16
 

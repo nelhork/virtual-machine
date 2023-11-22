@@ -12,6 +12,7 @@ class VirtualMachine
 {
 public:
     VirtualMachine();
+
     Memory* getMemory();
     Processor* getProcessor();
 
